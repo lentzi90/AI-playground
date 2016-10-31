@@ -1,0 +1,14 @@
+[package]
+name = "learning-rust"
+version = "0.1.0"
+authors = ["Lennart Jern <lennart.jern@gmail.com>"]
+
+[dependencies]
+rand = "0.3" # Random numbers
+
+# Web stuff
+iron = "0.4.0"
+staticfile = "*"
+
+[dependencies.mount]
+git = "https://github.com/iron/mount.git"
