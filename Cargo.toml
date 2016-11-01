@@ -5,6 +5,8 @@ authors = ["Lennart Jern <lennart.jern@gmail.com>"]
 
 [dependencies]
 rand = "0.3" # Random numbers
+rustc-serialize = "0.3"
+# time = "0.1"
 
 # Web stuff
 iron = "0.4.0"
