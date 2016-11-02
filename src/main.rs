@@ -22,14 +22,20 @@ const HEIGHT: u64 = 480;
 const WIDTH: u64 = 512;
 const BOUNDARY: u64 = 32;
 
-#[derive(RustcDecodable, RustcEncodable)]
 struct Game {
     hero: Point,
     gnome: Point,
     speed: u64,
+    time: Instant,
 }
 
 #[derive(RustcDecodable, RustcEncodable)]
+struct View {
+    hero: Point,
+    gnome: Point,
+}
+
+#[derive(RustcDecodable, RustcEncodable, Copy, Clone)]
 struct Point {
     x: u64,
     y: u64,
@@ -41,13 +47,15 @@ fn main() {
         hero: Point {x: WIDTH/2, y: HEIGHT/2},
         gnome: Point {x: 3, y: 4},
         speed: 256,
+        time: Instant::now(),
     };
+    let mut view = game.get_view();
 
-    let time = Instant::now();
-    let encoded = json::encode(&game).unwrap();
+    let encoded = json::encode(&view).unwrap();
     println!("{:?}", encoded);
-    game.update(time);
-    let encoded = json::encode(&game).unwrap();
+    game.update();
+    view = game.get_view();
+    let encoded = json::encode(&view).unwrap();
     println!("Updated: {:?}", encoded);
 
     // Handle get requests by sending back a random position on the map in json format.
@@ -65,19 +73,28 @@ fn main() {
         Ok(Response::with((status::Ok, response)))
     }
 
-    let mut mount = Mount::new();
+    //let mut mount = Mount::new();
     // Serve the game at /game/
-    mount.mount("/game/", Static::new(Path::new("simple_game")));
+    //mount.mount("/game/", Static::new(Path::new("simple_game")));
     // Serve game server at /
-    mount.mount("/", handler);
-    Iron::new(mount).http("127.0.0.1:4000").unwrap();
+    //mount.mount("/", handler);
+    //Iron::new(mount).http("127.0.0.1:4000").unwrap();
 }
 
 impl Game {
-    fn update(&mut self, time: Instant) {
+    fn update(&mut self) {
         sleep(Duration::new(2, 0));
-        let delta_t = time.elapsed().as_secs();
+        let delta_t = self.time.elapsed().as_secs();
         let delta_x = self.speed * delta_t;
         self.hero.x = self.hero.x + delta_x;
+        self.time = Instant::now();
+    }
+
+    fn get_view(&self) -> View {
+        let view = View {
+            hero: self.hero,
+            gnome: self.gnome,
+        };
+        return view;
     }
 }
