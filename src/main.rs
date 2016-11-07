@@ -41,44 +41,53 @@ struct Point {
     y: u64,
 }
 
+static mut game: Game = Game {
+    hero: Point {x: WIDTH/2, y: HEIGHT/2},
+    gnome: Point {x: 3, y: 4},
+    speed: 256,
+    time: Instant::now(),
+};
+
 fn main() {
+    unsafe {
+        let mut view = game.get_view();
 
-    let mut game = Game {
-        hero: Point {x: WIDTH/2, y: HEIGHT/2},
-        gnome: Point {x: 3, y: 4},
-        speed: 256,
-        time: Instant::now(),
-    };
-    let mut view = game.get_view();
-
-    let encoded = json::encode(&view).unwrap();
-    println!("{:?}", encoded);
-    game.update();
-    view = game.get_view();
-    let encoded = json::encode(&view).unwrap();
-    println!("Updated: {:?}", encoded);
-
-    // Handle get requests by sending back a random position on the map in json format.
-    fn handler(_request: &mut Request) -> IronResult<Response> {
-        let y_range = Range::new(BOUNDARY, HEIGHT-2*BOUNDARY); // Range for y coordinate
-        let x_range = Range::new(BOUNDARY, WIDTH-2*BOUNDARY); // Range for x coordinate
-        let mut rng = rand::thread_rng(); // Random number generator
-
-        // Get a random point
-        let x = x_range.ind_sample(&mut rng);
-        let y = y_range.ind_sample(&mut rng);
-        // Put together response
-        let response = format!("{{\"x\":\"{}\", \"y\":\"{}\"}}", x, y).clone();
-        // Send it
-        Ok(Response::with((status::Ok, response)))
+        let encoded = json::encode(&view).unwrap();
+        println!("{:?}", encoded);
+        game.update();
+        view = game.get_view();
+        let encoded = json::encode(&view).unwrap();
+        println!("Updated: {:?}", encoded);
     }
 
-    //let mut mount = Mount::new();
+    // Handle get requests by sending back a random position on the map in json format.
+    // fn handler(_request: &mut Request) -> IronResult<Response> {
+    //     let y_range = Range::new(BOUNDARY, HEIGHT-2*BOUNDARY); // Range for y coordinate
+    //     let x_range = Range::new(BOUNDARY, WIDTH-2*BOUNDARY); // Range for x coordinate
+    //     let mut rng = rand::thread_rng(); // Random number generator
+    //
+    //     // Get a random point
+    //     let x = x_range.ind_sample(&mut rng);
+    //     let y = y_range.ind_sample(&mut rng);
+    // }
+
+    // TODO: https://github.com/nickel-org/nickel.rs/blob/master/examples/route_data.rs
+    fn handler(_request: &mut Request) -> IronResult<Response> {
+        // Put together response
+        unsafe {
+            let view = game.get_view();
+            let response = json::encode(&view).unwrap();
+            // Send it
+            Ok(Response::with((status::Ok, response)))
+        }
+    }
+
+    let mut mount = Mount::new();
     // Serve the game at /game/
-    //mount.mount("/game/", Static::new(Path::new("simple_game")));
+    mount.mount("/game/", Static::new(Path::new("simple_game")));
     // Serve game server at /
-    //mount.mount("/", handler);
-    //Iron::new(mount).http("127.0.0.1:4000").unwrap();
+    mount.mount("/", handler);
+    Iron::new(mount).http("127.0.0.1:4000").unwrap();
 }
 
 impl Game {
@@ -91,10 +100,10 @@ impl Game {
     }
 
     fn get_view(&self) -> View {
-        let view = View {
+        self.update();
+        View {
             hero: self.hero,
             gnome: self.gnome,
-        };
-        return view;
+        }
     }
 }
