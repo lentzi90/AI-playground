@@ -1,26 +1,25 @@
-
 extern crate iron;
 extern crate staticfile;
 extern crate mount;
 extern crate rand;
-// extern crate time;
-
 extern crate rustc_serialize;
+
 use rustc_serialize::json;
 
 use iron::prelude::*;
 use iron::status;
-use rand::distributions::{IndependentSample, Range};
+use iron::{BeforeMiddleware, typemap};
 use mount::Mount;
 use staticfile::Static;
 use std::path::Path;
 
-use std::time::{Duration, Instant};
-use std::thread::sleep;
-
 use std::io::Write;
 use std::net::TcpListener;
 use std::thread;
+use std::thread::sleep;
+
+use rand::distributions::{IndependentSample, Range};
+use std::time::{Duration, Instant};
 
 const HEIGHT: u64 = 480;
 const WIDTH: u64 = 512;
@@ -66,7 +65,10 @@ fn main() {
         time: Instant::now(),
     };
     println!("Starting server...");
-    game.run_server();
+    // game.run_server();
+    let mut chain = Chain::new(handler);
+    chain.link_before(game);
+    Iron::new(chain).http("127.0.0.1:4000").unwrap();
 }
 
 impl Game {
@@ -78,8 +80,8 @@ impl Game {
         self.time = Instant::now();
     }
 
-    fn get_view(&mut self) -> View {
-        self.update();
+    fn get_view(&self) -> View {
+        // self.update();
         View {
             hero: self.hero,
             gnome: self.gnome,
@@ -98,6 +100,23 @@ impl Game {
             });
         }
     }
+}
+
+impl typemap::Key for View { type Value = u64; }
+
+impl BeforeMiddleware for Game {
+    fn before(&self, req: &mut Request) -> IronResult<()> {
+        let view: View = self.get_view();
+        println!("Extracted view {:?}", view.hero.x);
+        req.extensions.insert::<View>(314157);
+        Ok(())
+    }
+}
+
+fn handler(req: &mut Request) -> IronResult<Response> {
+    let data = *req.extensions.get::<View>().unwrap();
+    let response = format!("This is a response with data: {}\n", data);
+    Ok(Response::with((iron::status::Ok, response)))
 }
 
 
