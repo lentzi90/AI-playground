@@ -62,12 +62,8 @@ fn main() {
         time: Instant::now(),
     };
     println!("Starting server...");
-    // game.run_server();
     let mut mount = Mount::new();
-    // Serve the game at /game/
     mount.mount("/", game);
-    // let mut chain = Chain::new(handler);
-    // chain.link_before(game);
     Iron::new(mount).http("127.0.0.1:4000").unwrap();
 }
 
@@ -87,25 +83,12 @@ impl Game {
             gnome: self.gnome,
         }
     }
-
-    fn run_server(&mut self) {
-        let address = "127.0.0.1:4000";
-        let listener = TcpListener::bind(address).unwrap();
-        println!("Listening on {}", address);
-        for stream in listener.incoming() {
-            thread::spawn(move || {
-                let mut stream = stream.unwrap();
-                let response = format!("This is a response\n");
-                stream.write(response.as_bytes()).unwrap();
-            });
-        }
-    }
 }
 
 impl Handler for Game {
     fn handle(&self, _: &mut Request) -> IronResult<Response> {
         let view: View = self.get_view();
-        let response = format!("This is a response with data: {}\n", view.hero.x);
+        let response = json::encode(&view).unwrap();
         Ok(Response::with((iron::status::Ok, response)))
     }
 }
@@ -120,16 +103,4 @@ impl Handler for Game {
 //     // Get a random point
 //     let x = x_range.ind_sample(&mut rng);
 //     let y = y_range.ind_sample(&mut rng);
-// }
-//
-//  Json encoding
-// unsafe {
-//     let mut view = game.get_view();
-//
-//     let encoded = json::encode(&view).unwrap();
-//     println!("{:?}", encoded);
-//     game.update();
-//     view = game.get_view();
-//     let encoded = json::encode(&view).unwrap();
-//     println!("Updated: {:?}", encoded);
 // }
