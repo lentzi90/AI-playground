@@ -99,6 +99,11 @@ var update = function (modifier) {
 	// if (39 in keysDown) { // Player holding right
 	// 	hero.x += hero.speed * modifier;
 	// }
+	if (37 in keysDown) { // Player holding left
+		xmlhttp = new XMLHttpRequest();
+	  xmlhttp.open("POST", "http://127.0.0.1:4000/set/", true);
+	  xmlhttp.send('{"speed":-0.005}');
+	}
 
 	// Are they touching?
 	if (
