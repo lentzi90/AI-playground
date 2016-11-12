@@ -7,23 +7,20 @@ extern crate rustc_serialize;
 use rustc_serialize::json;
 
 use iron::prelude::*;
-use iron::status;
-use iron::middleware::Handler;
 use mount::Mount;
 use staticfile::Static;
 use std::path::Path;
 
-use std::io::Write;
-use std::net::TcpListener;
 use std::thread;
 use std::thread::sleep;
+use std::sync::{Arc, Mutex};
 
-use rand::distributions::{IndependentSample, Range};
+// use rand::distributions::{IndependentSample, Range};
 use std::time::{Duration, Instant};
 
 const HEIGHT: u64 = 480;
 const WIDTH: u64 = 512;
-const BOUNDARY: u64 = 32;
+// const BOUNDARY: u64 = 32;
 
 struct Game {
     hero: Point,
@@ -46,30 +43,45 @@ struct Point {
 
 fn main() {
 
-    println!("Serving game");
-    thread::spawn(move || {
-        let mut mount = Mount::new();
-        // Serve the game at /game/
-        mount.mount("/game/", Static::new(Path::new("simple_game")));
-        Iron::new(mount).http("127.0.0.1:9000").unwrap();
-    });
-
     println!("Initializing game");
-    let mut game: Game = Game {
+    let game: Game = Game {
         hero: Point {x: WIDTH/2, y: HEIGHT/2},
         gnome: Point {x: 3, y: 4},
         speed: 256,
         time: Instant::now(),
     };
-    println!("Starting server...");
-    let mut mount = Mount::new();
-    mount.mount("/", game);
-    Iron::new(mount).http("127.0.0.1:4000").unwrap();
+
+    let game_mtx = Arc::new(Mutex::new(game));
+    let game_clone = game_mtx.clone();
+
+    thread::spawn(move || {
+        let address = "127.0.0.1:4000";
+        println!("Starting game server at {}", address);
+        let mut mount = Mount::new();
+        mount.mount("/", move |r: &mut Request| handle_get(r, &game_clone.lock().unwrap()));
+        Iron::new(mount).http(address).unwrap();
+    });
+
+    thread::spawn(move || {
+        let address = "127.0.0.1:9000";
+        println!("Serving game view {}", address);
+        let mut mount = Mount::new();
+        // Serve the game at /game/
+        mount.mount("/", Static::new(Path::new("simple_game")));
+        Iron::new(mount).http(address).unwrap();
+    });
+
+    for _ in 0..10 {
+        sleep(Duration::new(2, 0));
+        println!("Updating game");
+        game_mtx.lock().unwrap().update();
+    }
+
 }
 
 impl Game {
     fn update(&mut self) {
-        sleep(Duration::new(2, 0));
+        // sleep(Duration::new(2, 0));
         let delta_t = self.time.elapsed().as_secs();
         let delta_x = self.speed * delta_t;
         self.hero.x = self.hero.x + delta_x;
@@ -77,7 +89,6 @@ impl Game {
     }
 
     fn get_view(&self) -> View {
-        // self.update();
         View {
             hero: self.hero,
             gnome: self.gnome,
@@ -85,12 +96,10 @@ impl Game {
     }
 }
 
-impl Handler for Game {
-    fn handle(&self, _: &mut Request) -> IronResult<Response> {
-        let view: View = self.get_view();
-        let response = json::encode(&view).unwrap();
-        Ok(Response::with((iron::status::Ok, response)))
-    }
+fn handle_get(_: &mut Request, game: &Game) -> IronResult<Response> {
+    let view: View = game.get_view();
+    let response = json::encode(&view).unwrap();
+    Ok(Response::with((iron::status::Ok, response)))
 }
 
 
