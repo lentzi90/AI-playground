@@ -25,7 +25,7 @@ const WIDTH: u64 = 512;
 struct Game {
     hero: Point,
     gnome: Point,
-    speed: u64,
+    speed: f64,
     time: Instant,
 }
 
@@ -47,7 +47,7 @@ fn main() {
     let game: Game = Game {
         hero: Point {x: WIDTH/2, y: HEIGHT/2},
         gnome: Point {x: 3, y: 4},
-        speed: 256,
+        speed: 0.005,
         time: Instant::now(),
     };
 
@@ -56,24 +56,18 @@ fn main() {
 
     thread::spawn(move || {
         let address = "127.0.0.1:4000";
-        println!("Starting game server at {}", address);
-        let mut mount = Mount::new();
-        mount.mount("/", move |r: &mut Request| handle_get(r, &game_clone.lock().unwrap()));
-        Iron::new(mount).http(address).unwrap();
-    });
-
-    thread::spawn(move || {
-        let address = "127.0.0.1:9000";
+        let folder = "/data/";
         println!("Serving game view {}", address);
+        println!("Starting game server at {}{}", address, folder);
         let mut mount = Mount::new();
-        // Serve the game at /game/
+        mount.mount(folder, move |r: &mut Request| handle_get(r, &game_clone.lock().unwrap()));
         mount.mount("/", Static::new(Path::new("simple_game")));
         Iron::new(mount).http(address).unwrap();
     });
 
-    for _ in 0..10 {
-        sleep(Duration::new(2, 0));
-        println!("Updating game");
+    loop {
+        sleep(Duration::new(0, 100_000_000));
+        // println!("Updating game");
         game_mtx.lock().unwrap().update();
     }
 
@@ -81,9 +75,11 @@ fn main() {
 
 impl Game {
     fn update(&mut self) {
-        // sleep(Duration::new(2, 0));
-        let delta_t = self.time.elapsed().as_secs();
-        let delta_x = self.speed * delta_t;
+        let secs = self.time.elapsed().as_secs();
+        let millis: u64 = (self.time.elapsed().subsec_nanos() / 1_000) as u64;
+        // delta t in seconds
+        let delta_t: f64 = (secs + millis/1_000) as f64;
+        let delta_x = (self.speed * delta_t).round() as u64;
         self.hero.x = self.hero.x + delta_x;
         self.time = Instant::now();
     }

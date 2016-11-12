@@ -1,9 +1,6 @@
 // Create the canvas
-var canvas = document.createElement("canvas");
+var canvas = document.getElementById("game_view");
 var ctx = canvas.getContext("2d");
-canvas.width = 512;
-canvas.height = 480;
-document.body.appendChild(canvas);
 
 // Background image
 var bgReady = false;
@@ -67,28 +64,41 @@ var reset = function () {
 	xmlhttp.onreadystatechange = function() {
     if (this.readyState == 4 && this.status == 200) {
       var obj = JSON.parse(this.responseText);
-			monster.x = obj.x;
-			monster.y = obj.y;
+			monster.x = obj.monster.x;
+			monster.y = obj.monster.y;
     }
   };
-  xmlhttp.open("GET", "http://127.0.0.1:4000", true);
+  xmlhttp.open("GET", "http://127.0.0.1:4000/data/", true);
   xmlhttp.send();
 };
 
 // Update game objects
 var update = function (modifier) {
-	if (38 in keysDown) { // Player holding up
-		hero.y -= hero.speed * modifier;
-	}
-	if (40 in keysDown) { // Player holding down
-		hero.y += hero.speed * modifier;
-	}
-	if (37 in keysDown) { // Player holding left
-		hero.x -= hero.speed * modifier;
-	}
-	if (39 in keysDown) { // Player holding right
-		hero.x += hero.speed * modifier;
-	}
+
+	// Get data from server
+	xmlhttp = new XMLHttpRequest();
+	xmlhttp.onreadystatechange = function() {
+    if (this.readyState == 4 && this.status == 200) {
+      var data = JSON.parse(this.responseText);
+			hero.x = data.hero.x;
+			hero.y = data.hero.y;
+    }
+  };
+  xmlhttp.open("GET", "http://127.0.0.1:4000/data/", true);
+  xmlhttp.send();
+
+	// if (38 in keysDown) { // Player holding up
+	// 	hero.y -= hero.speed * modifier;
+	// }
+	// if (40 in keysDown) { // Player holding down
+	// 	hero.y += hero.speed * modifier;
+	// }
+	// if (37 in keysDown) { // Player holding left
+	// 	hero.x -= hero.speed * modifier;
+	// }
+	// if (39 in keysDown) { // Player holding right
+	// 	hero.x += hero.speed * modifier;
+	// }
 
 	// Are they touching?
 	if (
