@@ -87,22 +87,29 @@ var update = function (modifier) {
   xmlhttp.open("GET", "http://127.0.0.1:4000/data/", true);
   xmlhttp.send();
 
-	// if (38 in keysDown) { // Player holding up
-	// 	hero.y -= hero.speed * modifier;
-	// }
-	// if (40 in keysDown) { // Player holding down
-	// 	hero.y += hero.speed * modifier;
-	// }
-	// if (37 in keysDown) { // Player holding left
-	// 	hero.x -= hero.speed * modifier;
-	// }
-	// if (39 in keysDown) { // Player holding right
-	// 	hero.x += hero.speed * modifier;
-	// }
-	if (37 in keysDown) { // Player holding left
+	if (38 in keysDown) { // Player holding up
+		var speed = {"amplitude": 0.01, "direction": eval(Math.PI/4)};
 		xmlhttp = new XMLHttpRequest();
 	  xmlhttp.open("POST", "http://127.0.0.1:4000/set/", true);
-	  xmlhttp.send('{"speed":-0.005}');
+	  xmlhttp.send(JSON.stringify(speed));
+	}
+	if (40 in keysDown) { // Player holding down
+		var speed = {"amplitude": 0.01, "direction": eval(Math.PI/2)};
+		xmlhttp = new XMLHttpRequest();
+	  xmlhttp.open("POST", "http://127.0.0.1:4000/set/", true);
+	  xmlhttp.send(JSON.stringify(speed));
+	}
+	if (37 in keysDown) { // Player holding left
+		var speed = {"amplitude": 0.01, "direction": eval(Math.PI)};
+		xmlhttp = new XMLHttpRequest();
+	  xmlhttp.open("POST", "http://127.0.0.1:4000/set/", true);
+	  xmlhttp.send(JSON.stringify(speed));
+	}
+	if (39 in keysDown) { // Player holding right
+		var speed = {"amplitude": 0.01, "direction": 0.0};
+		xmlhttp = new XMLHttpRequest();
+	  xmlhttp.open("POST", "http://127.0.0.1:4000/set/", true);
+	  xmlhttp.send(JSON.stringify(speed));
 	}
 
 	// Are they touching?

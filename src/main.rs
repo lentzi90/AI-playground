@@ -19,14 +19,14 @@ use std::io::Read;
 // use rand::distributions::{IndependentSample, Range};
 use std::time::{Duration, Instant};
 
-const HEIGHT: u64 = 480;
-const WIDTH: u64 = 512;
-// const BOUNDARY: u64 = 32;
+const HEIGHT: u32 = 480;
+const WIDTH: u32 = 512;
+// const BOUNDARY: u32 = 32;
 
 struct Game {
     hero: Point,
     gnome: Point,
-    speed: f64,
+    speed: Speed,
     time: Instant,
 }
 
@@ -38,13 +38,14 @@ struct View {
 
 #[derive(RustcDecodable, RustcEncodable, Copy, Clone)]
 struct Point {
-    x: u64,
-    y: u64,
+    x: u32,
+    y: u32,
 }
 
-#[derive(RustcDecodable)]
+#[derive(RustcDecodable, RustcEncodable, Copy, Clone)]
 struct Speed {
-    speed: f64
+    amplitude: f64,
+    direction: f64 // in radians
 }
 
 fn main() {
@@ -53,7 +54,7 @@ fn main() {
     let game: Game = Game {
         hero: Point {x: WIDTH/2, y: HEIGHT/2},
         gnome: Point {x: 3, y: 4},
-        speed: 0.005,
+        speed: Speed {amplitude: 0.005, direction: 0.0},
         time: Instant::now(),
     };
 
@@ -87,8 +88,15 @@ impl Game {
         let millis = (self.time.elapsed().subsec_nanos()/1_000) as u64;
         // delta t in seconds
         let delta_t: f64 = (secs + millis/1_000) as f64;
-        let delta_x = (self.speed * delta_t).round() as i64;
-        self.hero.x = (self.hero.x as i64 + delta_x) as u64;
+        let radius = self.speed.amplitude * delta_t;
+
+        let delta_x = (radius * self.speed.direction.cos()).round() as i64;
+        let delta_y = (radius * self.speed.direction.sin()).round() as i64;
+        println!("sin(dir): {:?}", self.speed.direction.sin());
+
+        // TODO: check for out of bounds
+        self.hero.x = (self.hero.x as i64 + delta_x) as u32;
+        self.hero.y = (self.hero.y as i64 + delta_y) as u32;
         self.time = Instant::now();
     }
 
@@ -109,9 +117,9 @@ fn handle_get(_: &mut Request, game: &Game) -> IronResult<Response> {
 fn handle_set(request: &mut Request, game: &mut Game) -> IronResult<Response> {
     let mut payload = String::new();
     request.body.read_to_string(&mut payload).unwrap();
-    println!("Got message: {:?}", payload);
+    // println!("Got message: {:?}", payload);
     let speed: Speed = json::decode(&payload).unwrap();
-    game.speed = speed.speed;
+    game.speed = speed;
     Ok(Response::with((iron::status::Ok)))
 }
 
