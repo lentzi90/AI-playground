@@ -75,6 +75,7 @@ var reset = function () {
 // Update game objects
 var update = function (modifier) {
 
+	var amp = 0.1;
 	// Get data from server
 	xmlhttp = new XMLHttpRequest();
 	xmlhttp.onreadystatechange = function() {
@@ -88,25 +89,25 @@ var update = function (modifier) {
   xmlhttp.send();
 
 	if (38 in keysDown) { // Player holding up
-		var speed = {"amplitude": 0.01, "direction": eval(Math.PI/4)};
+		var speed = {"amplitude": eval(amp), "direction": eval(2 * Math.PI * 3/4)};
 		xmlhttp = new XMLHttpRequest();
 	  xmlhttp.open("POST", "http://127.0.0.1:4000/set/", true);
 	  xmlhttp.send(JSON.stringify(speed));
 	}
 	if (40 in keysDown) { // Player holding down
-		var speed = {"amplitude": 0.01, "direction": eval(Math.PI/2)};
+		var speed = {"amplitude": eval(amp), "direction": eval(2 * Math.PI/4)};
 		xmlhttp = new XMLHttpRequest();
 	  xmlhttp.open("POST", "http://127.0.0.1:4000/set/", true);
 	  xmlhttp.send(JSON.stringify(speed));
 	}
 	if (37 in keysDown) { // Player holding left
-		var speed = {"amplitude": 0.01, "direction": eval(Math.PI)};
+		var speed = {"amplitude": eval(amp), "direction": eval(2 * Math.PI/2)};
 		xmlhttp = new XMLHttpRequest();
 	  xmlhttp.open("POST", "http://127.0.0.1:4000/set/", true);
 	  xmlhttp.send(JSON.stringify(speed));
 	}
 	if (39 in keysDown) { // Player holding right
-		var speed = {"amplitude": 0.01, "direction": 0.0};
+		var speed = {"amplitude": eval(amp), "direction": eval(2 * Math.PI)};
 		xmlhttp = new XMLHttpRequest();
 	  xmlhttp.open("POST", "http://127.0.0.1:4000/set/", true);
 	  xmlhttp.send(JSON.stringify(speed));

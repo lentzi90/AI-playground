@@ -89,14 +89,23 @@ impl Game {
         // delta t in seconds
         let delta_t: f64 = (secs + millis/1_000) as f64;
         let radius = self.speed.amplitude * delta_t;
+        let mut theta = self.speed.direction;
 
-        let delta_x = (radius * self.speed.direction.cos()).round() as i64;
-        let delta_y = (radius * self.speed.direction.sin()).round() as i64;
-        println!("sin(dir): {:?}", self.speed.direction.sin());
+        let delta_x = (radius * theta.cos()).round() as i64;
+        let delta_y = (radius * theta.sin()).round() as i64;
 
-        // TODO: check for out of bounds
-        self.hero.x = (self.hero.x as i64 + delta_x) as u32;
-        self.hero.y = (self.hero.y as i64 + delta_y) as u32;
+        let mut x = (self.hero.x as i64 + delta_x) as i64;
+        let mut y = (self.hero.y as i64 + delta_y) as i64;
+
+        if (x > WIDTH as i64) | (x < 0) {
+            x = x % WIDTH as i64;
+        }
+        if (y > WIDTH as i64) | (y < 0) {
+            y = y % WIDTH as i64;
+        }
+
+        self.hero.x = x as u32;
+        self.hero.y = y as u32;
         self.time = Instant::now();
     }
 
@@ -117,7 +126,6 @@ fn handle_get(_: &mut Request, game: &Game) -> IronResult<Response> {
 fn handle_set(request: &mut Request, game: &mut Game) -> IronResult<Response> {
     let mut payload = String::new();
     request.body.read_to_string(&mut payload).unwrap();
-    // println!("Got message: {:?}", payload);
     let speed: Speed = json::decode(&payload).unwrap();
     game.speed = speed;
     Ok(Response::with((iron::status::Ok)))
