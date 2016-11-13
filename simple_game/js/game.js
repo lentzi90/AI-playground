@@ -56,22 +56,6 @@ var init = function () {
 	monster.y = 32 + (Math.random() * (canvas.height - 64));
 };
 
-// Reset the game when the player catches a monster
-var reset = function () {
-
-	// Get a new monster from server
-	xmlhttp = new XMLHttpRequest();
-	xmlhttp.onreadystatechange = function() {
-    if (this.readyState == 4 && this.status == 200) {
-      var obj = JSON.parse(this.responseText);
-			monster.x = obj.monster.x;
-			monster.y = obj.monster.y;
-    }
-  };
-  xmlhttp.open("GET", "http://127.0.0.1:4000/data/", true);
-  xmlhttp.send();
-};
-
 // Update game objects
 var update = function (modifier) {
 
@@ -83,6 +67,8 @@ var update = function (modifier) {
       var data = JSON.parse(this.responseText);
 			hero.x = data.hero.x;
 			hero.y = data.hero.y;
+			monster.x = data.gnome.x;
+			monster.y = data.gnome.y;
     }
   };
   xmlhttp.open("GET", "http://127.0.0.1:4000/data/", true);
@@ -121,23 +107,6 @@ var update = function (modifier) {
 		&& monster.y <= (hero.y + 32)
 	) {
 		++monstersCaught;
-		reset();
-	}
-
-
-	// If player touches (crosses) boundary, then flip him over to the opposite side.
-	// Somewhat like what happens in "Snake" :P
-	if ( hero.x <= 0 ) {
-		hero.x = canvas.width - 10;
-	}
-	if ( hero.x >= canvas.width ) {
-		hero.x = 10;
-	}
-	if ( hero.y <= 0 ) {
-		hero.y = canvas.height - 10;
-	}
-	if ( hero.y >= canvas.height ) {
-		hero.y = 10;
 	}
 
 };

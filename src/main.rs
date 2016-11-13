@@ -16,12 +16,12 @@ use std::thread::sleep;
 use std::sync::{Arc, Mutex};
 use std::io::Read;
 
-// use rand::distributions::{IndependentSample, Range};
+use rand::distributions::{IndependentSample, Range};
 use std::time::{Duration, Instant};
 
 const HEIGHT: u32 = 480;
 const WIDTH: u32 = 512;
-// const BOUNDARY: u32 = 32;
+const BOUNDARY: u32 = 32;
 
 struct Game {
     hero: Point,
@@ -53,7 +53,7 @@ fn main() {
     println!("Initializing game");
     let game: Game = Game {
         hero: Point {x: WIDTH/2, y: HEIGHT/2},
-        gnome: Point {x: 3, y: 4},
+        gnome: Point {x: 300, y: 200},
         speed: Speed {amplitude: 0.005, direction: 0.0},
         time: Instant::now(),
     };
@@ -75,8 +75,7 @@ fn main() {
     });
 
     loop {
-        sleep(Duration::new(0, 100_000_000));
-        // println!("Updating game");
+        sleep(Duration::new(0, 10_000_000));
         game_mtx.lock().unwrap().update();
     }
 
@@ -84,12 +83,24 @@ fn main() {
 
 impl Game {
     fn update(&mut self) {
+        self.update_hero();
+        self.update_gnome();
+    }
+
+    fn get_view(&self) -> View {
+        View {
+            hero: self.hero,
+            gnome: self.gnome,
+        }
+    }
+
+    fn update_hero(&mut self) {
         let secs = self.time.elapsed().as_secs();
         let millis = (self.time.elapsed().subsec_nanos()/1_000) as u64;
         // delta t in seconds
         let delta_t: f64 = (secs + millis/1_000) as f64;
         let radius = self.speed.amplitude * delta_t;
-        let mut theta = self.speed.direction;
+        let theta = self.speed.direction;
 
         let delta_x = (radius * theta.cos()).round() as i64;
         let delta_y = (radius * theta.sin()).round() as i64;
@@ -100,8 +111,8 @@ impl Game {
         if (x > WIDTH as i64) | (x < 0) {
             x = x % WIDTH as i64;
         }
-        if (y > WIDTH as i64) | (y < 0) {
-            y = y % WIDTH as i64;
+        if (y > HEIGHT as i64) | (y < 0) {
+            y = y % HEIGHT as i64;
         }
 
         self.hero.x = x as u32;
@@ -109,11 +120,24 @@ impl Game {
         self.time = Instant::now();
     }
 
-    fn get_view(&self) -> View {
-        View {
-            hero: self.hero,
-            gnome: self.gnome,
-        }
+    fn update_gnome(&mut self) {
+        let hero = self.hero;
+        let gnome = self.gnome;
+
+        if (hero.x <= (gnome.x + 32)) & (gnome.x <= (hero.x + 32))
+                & (hero.y <= (gnome.y + 32)) & (gnome.y <= (hero.y + 32)) {
+
+            println!("Collision!");
+            let y_range = Range::new(BOUNDARY, HEIGHT-2*BOUNDARY); // Range for y coordinate
+            let x_range = Range::new(BOUNDARY, WIDTH-2*BOUNDARY); // Range for x coordinate
+            let mut rng = rand::thread_rng(); // Random number generator
+
+            // Get a random point
+            let x = x_range.ind_sample(&mut rng);
+            let y = y_range.ind_sample(&mut rng);
+            self.gnome.x = x;
+            self.gnome.y = y;
+    	}
     }
 }
 
