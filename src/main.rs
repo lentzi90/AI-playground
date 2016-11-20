@@ -27,6 +27,7 @@ struct Game {
     hero: Point,
     gnome: Point,
     speed: Speed,
+    score: u32,
     time: Instant,
 }
 
@@ -34,6 +35,7 @@ struct Game {
 struct View {
     hero: Point,
     gnome: Point,
+    score: u32,
 }
 
 #[derive(RustcDecodable, RustcEncodable, Copy, Clone)]
@@ -55,6 +57,7 @@ fn main() {
         hero: Point {x: WIDTH/2, y: HEIGHT/2},
         gnome: Point {x: 300, y: 200},
         speed: Speed {amplitude: 0.0, direction: 0.0},
+        score: 0,
         time: Instant::now(),
     };
 
@@ -96,6 +99,7 @@ impl Game {
         View {
             hero: self.hero,
             gnome: self.gnome,
+            score: self.score,
         }
     }
 
@@ -159,6 +163,8 @@ impl Game {
             let y = y_range.ind_sample(&mut rng);
             self.gnome.x = x;
             self.gnome.y = y;
+            // Add score
+            self.score += 1;
     	}
     }
 }

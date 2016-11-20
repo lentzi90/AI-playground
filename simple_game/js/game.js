@@ -1,14 +1,15 @@
 // Create the canvas
 var canvas = document.getElementById("game_view");
+canvas.style.backgroundColor = 'rgb(20, 100, 20)';
 var ctx = canvas.getContext("2d");
 
 // Background image
-var bgReady = false;
-var bgImage = new Image();
-bgImage.onload = function () {
-	bgReady = true;
-};
-bgImage.src = "images/background.png";
+// var bgReady = false;
+// var bgImage = new Image();
+// bgImage.onload = function () {
+// 	bgReady = true;
+// };
+// bgImage.src = "images/background.png";
 
 // Hero image
 var heroReady = false;
@@ -16,7 +17,7 @@ var heroImage = new Image();
 heroImage.onload = function () {
 	heroReady = true;
 };
-heroImage.src = "images/hero.png";
+heroImage.src = "images/human.png";
 
 // Monster image
 var monsterReady = false;
@@ -24,14 +25,10 @@ var monsterImage = new Image();
 monsterImage.onload = function () {
 	monsterReady = true;
 };
-monsterImage.src = "images/monster.png";
+monsterImage.src = "images/goblin.png";
 
 // Game objects
-var hero = {
-	speed: 256, // movement in pixels per second
-	x: canvas.width / 2,
-	y: canvas.height / 2
-};
+var hero = {};
 var monster = {};
 var monstersCaught = 0;
 
@@ -46,19 +43,16 @@ addEventListener("keyup", function (e) {
 	delete keysDown[e.keyCode];
 }, false);
 
-// Initialize the game
-var init = function () {
-	hero.x = canvas.width / 2;
-	hero.y = canvas.height / 2;
-
-	// Throw the monster somewhere on the screen randomly
-	monster.x = 32 + (Math.random() * (canvas.width - 64));
-	monster.y = 32 + (Math.random() * (canvas.height - 64));
+var setSpeed = function(speed) {
+	xmlhttp = new XMLHttpRequest();
+	xmlhttp.open("POST", "http://127.0.0.1:4000/set/", true);
+	xmlhttp.send(JSON.stringify(speed));
 };
 
 // Update game objects
 var update = function (modifier) {
 
+	// Amplitude of the speed vector
 	var amp = 0.1;
 	// Get data from server
 	xmlhttp = new XMLHttpRequest();
@@ -69,6 +63,7 @@ var update = function (modifier) {
 			hero.y = data.hero.y;
 			monster.x = data.gnome.x;
 			monster.y = data.gnome.y;
+			monstersCaught = data.score;
     }
   };
   xmlhttp.open("GET", "http://127.0.0.1:4000/data/", true);
@@ -76,46 +71,29 @@ var update = function (modifier) {
 
 	if (38 in keysDown) { // Player holding up
 		var speed = {"amplitude": eval(amp), "direction": eval(2 * Math.PI * 3/4)};
-		xmlhttp = new XMLHttpRequest();
-	  xmlhttp.open("POST", "http://127.0.0.1:4000/set/", true);
-	  xmlhttp.send(JSON.stringify(speed));
+		setSpeed(speed);
 	}
 	if (40 in keysDown) { // Player holding down
 		var speed = {"amplitude": eval(amp), "direction": eval(2 * Math.PI/4)};
-		xmlhttp = new XMLHttpRequest();
-	  xmlhttp.open("POST", "http://127.0.0.1:4000/set/", true);
-	  xmlhttp.send(JSON.stringify(speed));
+		setSpeed(speed);
 	}
 	if (37 in keysDown) { // Player holding left
 		var speed = {"amplitude": eval(amp), "direction": eval(2 * Math.PI/2)};
-		xmlhttp = new XMLHttpRequest();
-	  xmlhttp.open("POST", "http://127.0.0.1:4000/set/", true);
-	  xmlhttp.send(JSON.stringify(speed));
+		setSpeed(speed);
 	}
 	if (39 in keysDown) { // Player holding right
 		var speed = {"amplitude": eval(amp), "direction": eval(2 * Math.PI)};
-		xmlhttp = new XMLHttpRequest();
-	  xmlhttp.open("POST", "http://127.0.0.1:4000/set/", true);
-	  xmlhttp.send(JSON.stringify(speed));
-	}
-
-	// Are they touching?
-	if (
-		hero.x <= (monster.x + 32)
-		&& monster.x <= (hero.x + 32)
-		&& hero.y <= (monster.y + 32)
-		&& monster.y <= (hero.y + 32)
-	) {
-		++monstersCaught;
+		setSpeed(speed);
 	}
 
 };
 
 // Draw everything
 var render = function () {
-	if (bgReady) {
-		ctx.drawImage(bgImage, 0, 0);
-	}
+	// if (bgReady) {
+	// 	ctx.drawImage(bgImage, 0, 0);
+	// }
+	ctx.clearRect(0, 0, canvas.width, canvas.height);
 
 	if (heroReady) {
 		ctx.drawImage(heroImage, hero.x, hero.y);
@@ -153,5 +131,4 @@ requestAnimationFrame = w.requestAnimationFrame || w.webkitRequestAnimationFrame
 
 // Let's play this game!
 var then = Date.now();
-init();
 main();
