@@ -9,7 +9,7 @@ rustc-serialize = "0.3"
 # time = "0.1"
 
 # Web stuff
-iron = "0.4.0"
+iron = "0.5.1"
 staticfile = "*"
 
 [dependencies.mount]
